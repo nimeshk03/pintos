@@ -72,6 +72,140 @@ static void locate_block_device (enum block_type, const char *name);
 
 int pintos_init (void) NO_RETURN;
 
+static void interactive_shell (void);
+static void shell_whoami (void);
+static void shell_shutdown (void);
+static void shell_time (void);
+static void shell_ram (void);
+static void shell_thread (void);
+static void shell_priority (void);
+static char* read_line (void);
+
+/* Read a line of input from the user */
+static char*
+read_line (void)
+{
+  static char buffer[128];
+  int pos = 0;
+  uint8_t c;
+
+  while (pos < 127) 
+    {
+      c = input_getc ();
+      
+      if (c == '\r' || c == '\n') 
+        {
+          putchar ('\n');
+          break;
+        }
+      else if (c == '\b' || c == 0x7f) /* Backspace or DEL */
+        {
+          if (pos > 0) 
+            {
+              pos--;
+              printf ("\b \b"); /* Erase character on screen */
+            }
+        }
+      else if (c >= ' ' && c < 0x7f) /* Printable character */
+        {
+          buffer[pos++] = c;
+          putchar (c);
+        }
+    }
+  
+  buffer[pos] = '\0';
+  return buffer;
+}
+
+/* Shell command implementations */
+static void
+shell_whoami (void)
+{
+  printf ("Name : Nimesh Kulatunga\n");
+  printf ("Index : 230350D\n");
+}
+
+static void
+shell_shutdown (void)
+{
+  printf ("Shutting down Pintos OS...\n");
+  shutdown_power_off ();
+}
+
+static void
+shell_time (void)
+{
+  printf ("Seconds since Unix epoch: %u\n", (unsigned) rtc_get_time ());
+}
+
+static void
+shell_ram (void)
+{
+  printf ("Total RAM: %'"PRIu32" kB\n", init_ram_pages * PGSIZE / 1024);
+}
+
+static void
+shell_thread (void)
+{
+  thread_print_stats ();
+}
+
+static void
+shell_priority (void)
+{
+  printf ("Current thread priority: %d\n", thread_get_priority ());
+}
+
+/* Main interactive shell function */
+static void
+interactive_shell (void)
+{
+  char *input;
+  
+  printf ("\n");
+  printf ("========================================\n");
+  printf ("    Welcome to Pintos Interactive Shell!\n");
+  printf ("========================================\n");
+  printf ("Available commands: whoami, shutdown, time, ram, thread, priority, exit\n");
+  printf ("\n");
+
+  while (true)
+    {
+      printf ("CS2042> ");
+      input = read_line ();
+      
+      /* Skip empty input */
+      if (strlen (input) == 0)
+        continue;
+
+      /* Parse and execute commands */
+      if (strcmp (input, "whoami") == 0)
+        shell_whoami ();
+      else if (strcmp (input, "shutdown") == 0)
+        shell_shutdown ();
+      else if (strcmp (input, "time") == 0)
+        shell_time ();
+      else if (strcmp (input, "ram") == 0)
+        shell_ram ();
+      else if (strcmp (input, "thread") == 0)
+        shell_thread ();
+      else if (strcmp (input, "priority") == 0)
+        shell_priority ();
+      else if (strcmp (input, "exit") == 0)
+        {
+          printf ("Exiting interactive shell... Bye!\n");
+          break;
+        }
+      else
+        {
+          printf ("Unknown command: %s\n", input);
+          printf ("Available commands: whoami, shutdown, time, ram, thread, priority, exit\n");
+        }
+    }
+}
+
+
+
 /* Pintos main entry point. */
 int
 pintos_init (void)
@@ -133,7 +267,8 @@ pintos_init (void)
     /* Run actions specified on kernel command line. */
     run_actions (argv);
   } else {
-    // TODO: no command line passed to kernel. Run interactively 
+    // TODO: no command line passed to kernel. Run interactively
+    interactive_shell (); 
   }
 
   /* Finish up. */
