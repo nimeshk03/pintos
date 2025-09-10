@@ -83,6 +83,169 @@ static char* read_line (void);
 
 //extra functions
 static void shell_uptime (void);
+static void shell_cpu (void);
+static void shell_version (void);
+static void shell_processes (void);
+static void print_thread_info (struct thread *t, void *aux);
+static void shell_memory (void);
+
+
+
+static void
+shell_memory (void)
+{
+  printf("Memory Usage Breakdown:\n");
+  printf("=======================\n\n");
+  
+  /* Get total system memory */
+  printf("Total System Memory: %'"PRIu32" kB (%"PRIu32" pages)\n", 
+         init_ram_pages * PGSIZE / 1024, init_ram_pages);
+  printf("Page Size: %d bytes\n\n", PGSIZE);
+  
+  /* Calculate approximate pool sizes based on palloc_init logic */
+  uint8_t *free_start = ptov (1024 * 1024);
+  uint8_t *free_end = ptov (init_ram_pages * PGSIZE);
+  size_t free_pages = (free_end - free_start) / PGSIZE;
+  size_t user_pages = free_pages / 2;
+  size_t kernel_pages = free_pages - user_pages;
+  
+  printf("Memory Allocation:\n");
+  printf("  Reserved:      %d kB (first 1MB for BIOS/bootloader)\n", 
+         1024);
+  printf("  Available:     %zu pages (%zu kB)\n", 
+         free_pages, free_pages * PGSIZE / 1024);
+  printf("\n");
+  
+  /* Pool information */
+  printf("Kernel Memory Pool:\n");
+  printf("  Allocated:     %zu pages (%zu kB)\n", 
+         kernel_pages, kernel_pages * PGSIZE / 1024);
+  printf("  Usage:         Kernel data structures, page tables\n\n");
+  
+  printf("User Memory Pool:\n");
+  printf("  Allocated:     %zu pages (%zu kB)\n", 
+         user_pages, user_pages * PGSIZE / 1024);
+  printf("  Usage:         User program pages\n\n");
+  
+  /* Memory Layout Information */
+  printf("Memory Layout:\n");
+  printf("  Kernel Base:    0x%08x (%d kB)\n", 
+         LOADER_KERN_BASE, LOADER_KERN_BASE / 1024);
+  printf("  Physical Base:  0x%08x\n", LOADER_PHYS_BASE);
+  printf("  Page Directory: 0x%08x\n", (unsigned)init_page_dir);
+  printf("  Free Start:     0x%08x\n", (unsigned)free_start);
+  printf("  Free End:       0x%08x\n", (unsigned)free_end);
+}
+
+static void
+shell_processes (void)
+{
+  enum intr_level old_level;
+  
+  printf("Active Threads/Processes:\n");
+  printf("%-4s %-16s %-10s %-8s\n", "TID", "Name", "Status", "Priority");
+  printf("---- ---------------- ---------- --------\n");
+  
+  /* Disable interrupts before calling thread_foreach */
+  old_level = intr_disable ();
+  thread_foreach(print_thread_info, NULL);
+  intr_set_level (old_level);
+}
+
+/* Helper function to print individual thread information */
+static void
+print_thread_info (struct thread *t, void *aux UNUSED)
+{
+  const char *status_str;
+  
+  switch (t->status) {
+    case THREAD_RUNNING:
+      status_str = "RUNNING";
+      break;
+    case THREAD_READY:
+      status_str = "READY";
+      break;
+    case THREAD_BLOCKED:
+      status_str = "BLOCKED";
+      break;
+    case THREAD_DYING:
+      status_str = "DYING";
+      break;
+    default:
+      status_str = "UNKNOWN";
+      break;
+  }
+  
+  printf("%-4d %-16s %-10s %-8d\n", 
+         t->tid, t->name, status_str, t->priority);
+}
+
+static void
+shell_version (void)
+{
+  printf("Pintos Operating System\n");
+  printf("Educational OS for x86 Architecture\n");
+  printf("Originally developed at Stanford University\n");
+  printf("Modified for CS2042 - Operating Systems Course\n");
+  printf("\n");
+  printf("Build Information:\n");
+  printf("- Architecture: i386 (32-bit x86)\n");
+  printf("- Timer Frequency: %d Hz\n", TIMER_FREQ);
+  printf("- Page Size: %d bytes\n", PGSIZE);
+  printf("- Kernel Base: 0x%x\n", LOADER_KERN_BASE);
+  printf("- Physical Memory Base: 0x%x\n", LOADER_PHYS_BASE);
+  printf("\n");
+  printf("Features:\n");
+  printf("- Interactive kernel shell\n");
+  printf("- Thread scheduling\n");
+  printf("- Memory management\n");
+  printf("- Timer subsystem\n");
+  printf("- Interrupt handling\n");
+  printf("\n");
+  printf("Student Implementation: Nimesh Kulatunga (230350D)\n");
+  printf("University of Moratuwa - Academic Year - Intake 23\n");
+}
+
+static void
+shell_cpu (void)
+{
+  printf("CPU Information:\n");
+  printf("Architecture: i386 (x86)\n");
+  printf("Timer frequency: %d Hz\n", TIMER_FREQ);
+  
+  /* Get current timer ticks for basic usage calculation */
+  int64_t current_ticks = timer_ticks();
+  
+  /* Use the getter function instead of direct access */
+  printf("Timer calibration: Pintos can execute approximately %u loops per tick\n", 
+         timer_get_loops_per_tick());
+  
+  /* Current thread information */
+  struct thread *current = thread_current();
+  printf("Current thread: %s (TID: %d)\n", current->name, current->tid);
+  printf("Thread priority: %d\n", current->priority);
+  printf("Thread status: ");
+  
+  switch (current->status) {
+    case THREAD_RUNNING:
+      printf("RUNNING\n");
+      break;
+    case THREAD_READY:
+      printf("READY\n");
+      break;
+    case THREAD_BLOCKED:
+      printf("BLOCKED\n");
+      break;
+    case THREAD_DYING:
+      printf("DYING\n");
+      break;
+    default:
+      printf("UNKNOWN\n");
+      break;
+  }
+  
+  printf("System ticks: %"PRId64"\n", current_ticks);
+}
 
 static void
 shell_uptime (void)
@@ -192,7 +355,7 @@ interactive_shell (void)
   printf ("  Welcome to Pintos Interactive Shell!\n");
   printf ("========================================\n");
   //printf ("Available commands: whoami, shutdown, time, ram, thread, priority, exit\n");
-  printf ("Available commands: whoami, shutdown, time, ram, thread, priority, uptime, exit\n");
+  printf ("Available commands: whoami, shutdown, time, ram, thread, priority, uptime, cpu, version, processes, memory, exit\n");
   printf ("\n");
 
   while (true)
@@ -219,6 +382,14 @@ interactive_shell (void)
         shell_priority ();
       else if (strcmp (input, "uptime") == 0)
         shell_uptime ();
+      else if (strcmp (input, "cpu") == 0)
+        shell_cpu ();
+      else if (strcmp (input, "version") == 0)
+        shell_version ();
+      else if (strcmp (input, "processes") == 0)
+        shell_processes ();
+      else if (strcmp (input, "memory") == 0)
+        shell_memory ();
       else if (strcmp (input, "exit") == 0)
         {
           printf ("Exiting interactive shell... Bye!\n");
@@ -228,7 +399,7 @@ interactive_shell (void)
         {
           printf ("Unknown command: %s\n", input);
           //printf ("Available commands: whoami, shutdown, time, ram, thread, priority, exit\n");
-          printf ("Available commands: whoami, shutdown, time, ram, thread, priority, uptime, exit\n");
+          printf ("Available commands: whoami, shutdown, time, ram, thread, priority, uptime, cpu, version, processes, memory, exit\n");
         }
     }
 }

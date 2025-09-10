@@ -24,6 +24,8 @@ void timer_mdelay (int64_t milliseconds);
 void timer_udelay (int64_t microseconds);
 void timer_ndelay (int64_t nanoseconds);
 
+unsigned timer_get_loops_per_tick (void);
+
 void timer_print_stats (void);
 
 #endif /* devices/timer.h */

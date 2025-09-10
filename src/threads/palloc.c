@@ -26,6 +26,8 @@
    kernel pool, but that's just fine for demonstration purposes. */
 
 /* A memory pool. */
+
+
 struct pool
   {
     struct lock lock;                   /* Mutual exclusion. */

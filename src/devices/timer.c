@@ -39,6 +39,13 @@ timer_init (void)
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
 
+/* Utility function for cpu function */
+unsigned 
+timer_get_loops_per_tick (void)
+{
+  return loops_per_tick;
+}
+
 /* Calibrates loops_per_tick, used to implement brief delays. */
 void
 timer_calibrate (void) 
