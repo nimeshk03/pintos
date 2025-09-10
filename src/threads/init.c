@@ -81,6 +81,31 @@ static void shell_thread (void);
 static void shell_priority (void);
 static char* read_line (void);
 
+//extra functions
+static void shell_uptime (void);
+
+static void
+shell_uptime (void)
+{
+  int64_t total_ticks = timer_ticks();
+  int64_t total_seconds = total_ticks / TIMER_FREQ;
+  
+  int64_t days = total_seconds / (24 * 60 * 60);
+  int64_t hours = (total_seconds % (24 * 60 * 60)) / (60 * 60);
+  int64_t minutes = (total_seconds % (60 * 60)) / 60;
+  int64_t seconds = total_seconds % 60;
+  
+  printf("System uptime: ");
+  if (days > 0) {
+    printf("%"PRId64" days, ", days);
+  }
+  if (hours > 0 || days > 0) {
+    printf("%"PRId64" hours, ", hours);
+  }
+  printf("%"PRId64" minutes, %"PRId64" seconds\n", minutes, seconds);
+  printf("Total ticks: %"PRId64" (at %d Hz)\n", total_ticks, TIMER_FREQ);
+}
+
 /* Read a line of input from the user */
 static char*
 read_line (void)
@@ -164,9 +189,10 @@ interactive_shell (void)
   
   printf ("\n");
   printf ("========================================\n");
-  printf ("    Welcome to Pintos Interactive Shell!\n");
+  printf ("  Welcome to Pintos Interactive Shell!\n");
   printf ("========================================\n");
-  printf ("Available commands: whoami, shutdown, time, ram, thread, priority, exit\n");
+  //printf ("Available commands: whoami, shutdown, time, ram, thread, priority, exit\n");
+  printf ("Available commands: whoami, shutdown, time, ram, thread, priority, uptime, exit\n");
   printf ("\n");
 
   while (true)
@@ -191,6 +217,8 @@ interactive_shell (void)
         shell_thread ();
       else if (strcmp (input, "priority") == 0)
         shell_priority ();
+      else if (strcmp (input, "uptime") == 0)
+        shell_uptime ();
       else if (strcmp (input, "exit") == 0)
         {
           printf ("Exiting interactive shell... Bye!\n");
@@ -199,7 +227,8 @@ interactive_shell (void)
       else
         {
           printf ("Unknown command: %s\n", input);
-          printf ("Available commands: whoami, shutdown, time, ram, thread, priority, exit\n");
+          //printf ("Available commands: whoami, shutdown, time, ram, thread, priority, exit\n");
+          printf ("Available commands: whoami, shutdown, time, ram, thread, priority, uptime, exit\n");
         }
     }
 }
@@ -267,8 +296,13 @@ pintos_init (void)
     /* Run actions specified on kernel command line. */
     run_actions (argv);
   } else {
+
     // TODO: no command line passed to kernel. Run interactively
-    interactive_shell (); 
+  
+    printf("Starting interactive shell...\n");
+    //printf("Shell integration successful - kernel boots properly!\n");
+    interactive_shell();
+    
   }
 
   /* Finish up. */

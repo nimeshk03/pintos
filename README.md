@@ -15,13 +15,14 @@ The upstream source for this project comes from https://github.com/kavienanj/pin
 
 ### Week 1: Interactive Shell
 - **Kernel-level shell** that runs when no command line arguments are provided
-- **Seven interactive commands**:
+- **Eight interactive commands**:
   - `whoami` - Display student name and index number
   - `shutdown` - Shutdown Pintos OS and exit QEMU emulator
   - `time` - Display seconds elapsed since Unix epoch (January 1, 1970)
   - `ram` - Display total RAM available to the OS
   - `thread` - Display current thread statistics
   - `priority` - Display current thread priority
+  - `uptime` - Display system uptime in human-readable format with tick information
   - `exit` - Exit the interactive shell
 - **Input handling** with backspace support for command editing
 - **Command validation** with helpful error messages for unknown commands
@@ -34,7 +35,7 @@ The upstream source for this project comes from https://github.com/kavienanj/pin
 - **Integration Point**: Replaces the TODO section in `pintos_init()` function
 - **Input System**: Uses `devices/input.c` for character input via `input_getc()`
 - **Output System**: Uses kernel printf functions for display
-- **System Information**: Accesses RTC, memory, and thread subsystems
+- **System Information**: Accesses RTC, memory, thread, and timer subsystems
 
 ### Key Functions
 - `interactive_shell()` - Main shell loop
@@ -50,29 +51,23 @@ The upstream source for this project comes from https://github.com/kavienanj/pin
 ## Development Environment
 
 ### Docker Setup
-```bash
-# Mount project directory for persistent changes
-docker run -it --rm --mount type=bind,source="C:\Users\nimes\OneDrive\Engineering\Semester 3\OS\PintOS\pintos",target=/pintos pintos
+```cmd
+# Mount project directory for persistent changes (Windows Command Prompt)
+docker run -it --rm --mount type=bind,source="C:\Users\nimes\OneDrive\Engineering\Semester 3\OS\PintOS\pintos\src",target=/pintos/src pintos
 ```
 
-### Build Process
+### Build and Run Process
 ```bash
-cd /pintos/src/threads
+# Inside Docker container
 make clean
 make
-```
-
-### Testing
-```bash
-cd build
-perl /pintos/src/utils/pintos-mkdisk pintos_proper.img --kernel=kernel.bin
-qemu-system-i386 -drive format=raw,file=pintos_proper.img -m 4 -nographic -monitor null
+pintos --
 ```
 
 ## Usage
 
 1. **Start Pintos** - Boot with no command line arguments to trigger interactive shell
-2. **Available Commands** - Type any of the seven supported commands
+2. **Available Commands** - Type any of the eight supported commands
 3. **Input Editing** - Use backspace to edit commands before pressing Enter
 4. **Exit Options** - Use `exit` to return to kernel or `shutdown` to power off
 
@@ -82,6 +77,7 @@ qemu-system-i386 -drive format=raw,file=pintos_proper.img -m 4 -nographic -monit
 - ✅ Direct hardware interaction through Pintos APIs
 - ✅ Memory management and thread system integration
 - ✅ Real-time clock access for Unix timestamp
+- ✅ Timer system integration for uptime calculation
 - ✅ Professional user interface design
 - ✅ Robust input handling and error management
 
